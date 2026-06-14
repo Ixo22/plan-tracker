@@ -23,9 +23,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Let the root server component read the session and redirect by role
-    router.push("/");
-    router.refresh();
+    // Hard redirect so the browser sends the fresh session cookie
+    window.location.href = "/";
   }
 
   return (
