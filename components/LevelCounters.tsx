@@ -1,4 +1,12 @@
-import type { Plan, Tracking } from "@prisma/client";
+import type { Tracking } from "@prisma/client";
+import SuggestionsBox from "./SuggestionsBox";
+
+export type PlanSuggestion = {
+  id: string;
+  title: string;
+  location: string | null;
+  category: string;
+};
 
 const LEVEL_CONFIG = {
   1: {
@@ -29,7 +37,7 @@ const LEVEL_CONFIG = {
 
 interface Props {
   trackings: Tracking[];
-  suggestions: Record<number, Plan[]>;
+  suggestions: Record<number, PlanSuggestion[]>;
 }
 
 export default function LevelCounters({ trackings, suggestions }: Props) {
@@ -52,7 +60,6 @@ export default function LevelCounters({ trackings, suggestions }: Props) {
           (new Date(t.next_scheduled_at).getTime() - now.getTime()) / 86_400_000
         );
         const isDue = daysLeft <= 0;
-        const levelSuggestions = suggestions[t.level] ?? [];
 
         return (
           <div
@@ -90,25 +97,11 @@ export default function LevelCounters({ trackings, suggestions }: Props) {
               </div>
             </div>
 
-            <div className={`px-5 pb-5 ${cfg.badge} mx-5 mb-5 rounded-xl border`}>
-              <p className="text-xs font-bold uppercase tracking-wider opacity-60 pt-3 pb-2">
-                🎲 Sugerencias
-              </p>
-              {levelSuggestions.length === 0 ? (
-                <p className="text-xs opacity-60 pb-3">Sin planes asignados a este nivel</p>
-              ) : (
-                <ul className="space-y-2 pb-1">
-                  {levelSuggestions.map((plan) => (
-                    <li key={plan.id} className="flex flex-col">
-                      <span className="font-semibold text-sm leading-tight">{plan.title}</span>
-                      {plan.location && (
-                        <span className="text-xs opacity-60 mt-0.5">📍 {plan.location}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <SuggestionsBox
+              level={t.level}
+              initial={suggestions[t.level] ?? []}
+              badge={cfg.badge}
+            />
           </div>
         );
       })}

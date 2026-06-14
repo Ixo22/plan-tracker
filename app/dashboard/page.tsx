@@ -2,17 +2,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import LevelCounters from "@/components/LevelCounters";
+import LevelCounters, { type PlanSuggestion } from "@/components/LevelCounters";
 import NavBar from "@/components/NavBar";
-import type { Plan } from "@prisma/client";
 
 function pickRandom<T>(arr: T[], n: number): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
-async function getSuggestions(level: number): Promise<Plan[]> {
-  const plans = await prisma.plan.findMany({ where: { assigned_level: level } });
+async function getSuggestions(level: number): Promise<PlanSuggestion[]> {
+  const plans = await prisma.plan.findMany({
+    where: { assigned_level: level },
+    select: { id: true, title: true, location: true, category: true },
+  });
   return pickRandom(plans, 3);
 }
 
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
 
   const trackings = await prisma.tracking.findMany({ orderBy: { level: "asc" } });
 
-  const suggestions: Record<number, Plan[]> = {};
+  const suggestions: Record<number, PlanSuggestion[]> = {};
   for (const t of trackings) {
     suggestions[t.level] = await getSuggestions(t.level);
   }
