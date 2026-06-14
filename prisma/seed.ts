@@ -4,8 +4,8 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminHash = await bcrypt.hash("admin123", 12);
-  const memberHash = await bcrypt.hash("member123", 12);
+  const adminHash = await bcrypt.hash("admin", 12);
+  const memberHash = await bcrypt.hash("member", 12);
 
   await prisma.user.upsert({
     where: { username: "admin" },
@@ -32,8 +32,8 @@ async function main() {
   }
 
   console.log("Seed completado:");
-  console.log("  admin / admin123  →  rol ADMIN  (va al dashboard)");
-  console.log("  member / member123  →  rol MEMBER  (va al formulario)");
+  console.log("  admin / admin  →  rol ADMIN  (va al dashboard)");
+  console.log("  member / member  →  rol MEMBER  (va al formulario)");
 }
 
 main()
