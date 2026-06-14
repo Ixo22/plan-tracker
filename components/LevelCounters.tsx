@@ -1,4 +1,4 @@
-import type { Tracking } from "@prisma/client";
+import type { Plan, Tracking } from "@prisma/client";
 
 const LEVEL_CONFIG = {
   1: {
@@ -27,11 +27,9 @@ const LEVEL_CONFIG = {
   },
 } as const;
 
-type Suggestion = { id: string; title: string; location: string | null; category: string } | null;
-
 interface Props {
   trackings: Tracking[];
-  suggestions: Record<number, Suggestion>;
+  suggestions: Record<number, Plan[]>;
 }
 
 export default function LevelCounters({ trackings, suggestions }: Props) {
@@ -54,7 +52,7 @@ export default function LevelCounters({ trackings, suggestions }: Props) {
           (new Date(t.next_scheduled_at).getTime() - now.getTime()) / 86_400_000
         );
         const isDue = daysLeft <= 0;
-        const suggestion = suggestions[t.level];
+        const levelSuggestions = suggestions[t.level] ?? [];
 
         return (
           <div
@@ -92,28 +90,25 @@ export default function LevelCounters({ trackings, suggestions }: Props) {
               </div>
             </div>
 
-            {isDue && (
-              <div className={`mx-5 mb-5 rounded-xl border p-4 ${cfg.badge}`}>
-                {suggestion ? (
-                  <>
-                    <p className="text-xs font-bold uppercase tracking-wider opacity-60 mb-1.5">
-                      🎲 Sugerencia aleatoria
-                    </p>
-                    <p className="font-bold text-sm">{suggestion.title}</p>
-                    {suggestion.location && (
-                      <p className="text-xs mt-1 opacity-75">📍 {suggestion.location}</p>
-                    )}
-                    <p className="text-xs mt-1 opacity-50 capitalize">
-                      {suggestion.category.replace("_", " ")}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs text-center opacity-70">
-                    Sin planes asignados a este nivel
-                  </p>
-                )}
-              </div>
-            )}
+            <div className={`px-5 pb-5 ${cfg.badge} mx-5 mb-5 rounded-xl border`}>
+              <p className="text-xs font-bold uppercase tracking-wider opacity-60 pt-3 pb-2">
+                🎲 Sugerencias
+              </p>
+              {levelSuggestions.length === 0 ? (
+                <p className="text-xs opacity-60 pb-3">Sin planes asignados a este nivel</p>
+              ) : (
+                <ul className="space-y-2 pb-1">
+                  {levelSuggestions.map((plan) => (
+                    <li key={plan.id} className="flex flex-col">
+                      <span className="font-semibold text-sm leading-tight">{plan.title}</span>
+                      {plan.location && (
+                        <span className="text-xs opacity-60 mt-0.5">📍 {plan.location}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         );
       })}

@@ -85,7 +85,7 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
         {CATEGORY_FILTERS.map((cat) => (
           <button
             key={cat}
-            onClick={() => setCategoryFilter(cat)}
+            onClick={() => setCategoryFilter(cat !== "todos" && categoryFilter === cat ? "todos" : cat)}
             className={`px-3.5 py-1.5 rounded-full text-sm font-medium capitalize transition-colors ${
               categoryFilter === cat
                 ? "bg-slate-900 text-white"
