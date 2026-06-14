@@ -82,6 +82,27 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
     }
   }
 
+  const availableCategories = useMemo(() => {
+    const cats = new Set(plans.map((p) => p.category));
+    return CATEGORY_FILTERS.filter((c) => c === "todos" || cats.has(c));
+  }, [plans]);
+
+  const availableFoodSubcategories = useMemo(() => {
+    const subs = new Set(
+      plans.filter((p) => p.category === "comida").map((p) => p.subcategory)
+    );
+    return FOOD_SUBCATEGORIES.filter((f) => subs.has(f.value));
+  }, [plans]);
+
+  const availableLevels = useMemo(() => {
+    const levels = new Set(plans.map((p) => p.assigned_level));
+    return LEVEL_FILTERS.filter((f) => {
+      if (f.value === null) return true;
+      if (f.value === 0) return levels.has(null);
+      return levels.has(f.value);
+    });
+  }, [plans]);
+
   const filtered = useMemo(() => {
     const base = plans
       .filter((p) => categoryFilter === "todos" || p.category === categoryFilter)
@@ -130,7 +151,7 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
         {/* Category row */}
         <div className="flex gap-2 flex-wrap items-center">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Cat.</span>
-          {CATEGORY_FILTERS.map((cat) => (
+          {availableCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
@@ -145,7 +166,7 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
         {categoryFilter === "comida" && (
           <div className="flex gap-2 flex-wrap items-center">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Tipo</span>
-            {FOOD_SUBCATEGORIES.map(({ value, label }) => (
+            {availableFoodSubcategories.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => handleSubcategoryClick(value)}
@@ -160,7 +181,7 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
         {/* Level row */}
         <div className="flex gap-2 flex-wrap items-center">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Nivel</span>
-          {LEVEL_FILTERS.map(({ value, label }) => (
+          {availableLevels.map(({ value, label }) => (
             <button
               key={String(value)}
               onClick={() => handleLevelClick(value)}
