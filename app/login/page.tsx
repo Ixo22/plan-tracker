@@ -74,6 +74,12 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+        <p className="text-center mt-4 text-sm text-slate-400">
+          ¿Solo quieres ver la app?{" "}
+          <a href="/demo" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+            Ver demo
+          </a>
+        </p>
       </div>
     </main>
   );
