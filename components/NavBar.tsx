@@ -3,7 +3,7 @@ import SignOutButton from "./SignOutButton";
 
 interface Props {
   username: string;
-  current: "dashboard" | "inbox";
+  current: "dashboard" | "inbox" | "nuevo";
 }
 
 export default function NavBar({ username, current }: Props) {
@@ -32,6 +32,16 @@ export default function NavBar({ username, current }: Props) {
               }`}
             >
               Bandeja
+            </Link>
+            <Link
+              href="/plans/new"
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                current === "nuevo"
+                  ? "bg-white/15 text-white"
+                  : "text-slate-400 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              Nuevo plan
             </Link>
           </nav>
         </div>
