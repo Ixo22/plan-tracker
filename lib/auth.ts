@@ -3,15 +3,16 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
-const DEV_USERS: Record<string, { id: string; name: string; role: string; hash: string }> = {
-  admin: { id: "dev-admin", name: "admin", role: "ADMIN", hash: "" },
-  member: { id: "dev-member", name: "member", role: "MEMBER", hash: "" },
-};
+const DEV_USERS: Record<string, { id: string; name: string; role: string; hash: string }> = {};
 
-// Pre-compute hashes at module init so they're ready on first login
 (async () => {
-  DEV_USERS.admin.hash = await bcrypt.hash("admin", 10);
-  DEV_USERS.member.hash = await bcrypt.hash("member", 10);
+  const adminUser = process.env.ADMIN_USERNAME ?? "admin";
+  const adminPass = process.env.ADMIN_PASSWORD ?? "admin";
+  const memberUser = process.env.MEMBER_USERNAME ?? "member";
+  const memberPass = process.env.MEMBER_PASSWORD ?? "member";
+
+  DEV_USERS[adminUser] = { id: "dev-admin", name: adminUser, role: "ADMIN", hash: await bcrypt.hash(adminPass, 10) };
+  DEV_USERS[memberUser] = { id: "dev-member", name: memberUser, role: "MEMBER", hash: await bcrypt.hash(memberPass, 10) };
 })();
 
 async function authorizeFromDB(username: string, password: string) {

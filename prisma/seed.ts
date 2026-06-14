@@ -11,27 +11,40 @@ const adapter = new PrismaPg({
 });
 const prisma = new PrismaClient({ adapter });
 
+async function upsertByRole(
+  role: "ADMIN" | "MEMBER",
+  username: string,
+  password: string
+) {
+  const hash = await bcrypt.hash(password, 12);
+  const existing = await prisma.user.findFirst({ where: { role } });
+  if (existing) {
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: { username, password_hash: hash },
+    });
+    console.log(`  ${role}: actualizado → ${username}`);
+  } else {
+    await prisma.user.create({
+      data: { username, password_hash: hash, role },
+    });
+    console.log(`  ${role}: creado → ${username}`);
+  }
+}
+
 async function main() {
-  const adminHash = await bcrypt.hash("admin", 12);
-  const memberHash = await bcrypt.hash("member", 12);
+  const adminUser = process.env.ADMIN_USERNAME ?? "admin";
+  const adminPass = process.env.ADMIN_PASSWORD ?? "admin";
+  const memberUser = process.env.MEMBER_USERNAME ?? "member";
+  const memberPass = process.env.MEMBER_PASSWORD ?? "member";
 
-  await prisma.user.upsert({
-    where: { username: "admin" },
-    update: {},
-    create: { username: "admin", password_hash: adminHash, role: "ADMIN" },
-  });
-
-  await prisma.user.upsert({
-    where: { username: "member" },
-    update: {},
-    create: { username: "member", password_hash: memberHash, role: "MEMBER" },
-  });
+  await upsertByRole("ADMIN", adminUser, adminPass);
+  await upsertByRole("MEMBER", memberUser, memberPass);
 
   const now = new Date();
   for (const level of [1, 2, 3] as const) {
     const daysAhead = level === 1 ? 7 : level === 2 ? 14 : 30;
     const next = new Date(now.getTime() + daysAhead * 86_400_000);
-
     await prisma.tracking.upsert({
       where: { level },
       update: {},
@@ -39,9 +52,7 @@ async function main() {
     });
   }
 
-  console.log("Seed completado:");
-  console.log("  admin / admin  →  rol ADMIN  (va al dashboard)");
-  console.log("  member / member  →  rol MEMBER  (va al formulario)");
+  console.log("Seed completado.");
 }
 
 main()
