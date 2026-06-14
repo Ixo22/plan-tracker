@@ -3,7 +3,7 @@ import Link from "next/link";
 const LEVEL_CONFIG = {
   1: {
     label: "Nivel 1",
-    description: "Detalles diarios",
+    description: "Planes diarios",
     accent: "border-l-emerald-500",
     dot: "bg-emerald-500",
     numColor: "text-emerald-600",
