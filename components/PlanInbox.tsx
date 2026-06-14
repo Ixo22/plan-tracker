@@ -30,14 +30,48 @@ const LEVEL_ACTIVE = {
 
 const CATEGORY_FILTERS = ["todos", "aire_libre", "comida", "entretenimiento", "viaje", "cultura"];
 
+const FOOD_SUBCATEGORIES = [
+  { value: "italiana", label: "Italiana" },
+  { value: "sushi", label: "Sushi" },
+  { value: "hamburguesas", label: "Hamburguesas" },
+  { value: "mexicana", label: "Mexicana" },
+  { value: "asiatica", label: "Asiática" },
+  { value: "tapas", label: "Tapas" },
+  { value: "otra", label: "Otra" },
+];
+
+const LEVEL_FILTERS = [
+  { value: null, label: "Todos" },
+  { value: 1, label: "N1" },
+  { value: 2, label: "N2" },
+  { value: 3, label: "N3" },
+  { value: 0, label: "Sin nivel" },
+] as const;
+
 export default function PlanInbox({ plans }: { plans: Plan[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [categoryFilter, setCategoryFilter] = useState("todos");
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string | null>(null);
+  const [levelFilter, setLevelFilter] = useState<number | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function handleCategoryClick(cat: string) {
+    const next = cat !== "todos" && categoryFilter === cat ? "todos" : cat;
+    setCategoryFilter(next);
+    setSubcategoryFilter(null);
+  }
+
+  function handleSubcategoryClick(val: string) {
+    setSubcategoryFilter(subcategoryFilter === val ? null : val);
+  }
+
+  function handleLevelClick(val: number | null) {
+    setLevelFilter(levelFilter === val ? null : val);
+  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -49,7 +83,14 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
   }
 
   const filtered = useMemo(() => {
-    const base = categoryFilter === "todos" ? plans : plans.filter((p) => p.category === categoryFilter);
+    const base = plans
+      .filter((p) => categoryFilter === "todos" || p.category === categoryFilter)
+      .filter((p) => !subcategoryFilter || p.subcategory === subcategoryFilter)
+      .filter((p) => {
+        if (levelFilter === null) return true;
+        if (levelFilter === 0) return !p.assigned_level;
+        return p.assigned_level === levelFilter;
+      });
     return [...base].sort((a, b) => {
       let av: string | number = a[sortKey] ?? "";
       let bv: string | number = b[sortKey] ?? "";
@@ -60,7 +101,7 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
       const cmp = av < bv ? -1 : av > bv ? 1 : 0;
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [plans, categoryFilter, sortKey, sortDir]);
+  }, [plans, categoryFilter, subcategoryFilter, levelFilter, sortKey, sortDir]);
 
   async function assignLevel(planId: string, level: number) {
     setAssigning(planId);
@@ -79,25 +120,71 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
     startTransition(() => router.refresh());
   }
 
+  const pillBase = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors";
+  const pillOff = `${pillBase} bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300`;
+  const pillOn = `${pillBase} bg-slate-900 text-white`;
+
   return (
     <div>
-      <div className="flex gap-2 flex-wrap mb-5 items-center">
-        {CATEGORY_FILTERS.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategoryFilter(cat !== "todos" && categoryFilter === cat ? "todos" : cat)}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium capitalize transition-colors ${
-              categoryFilter === cat
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-            }`}
-          >
-            {cat === "todos" ? "Todos" : cat.replace("_", " ")}
-          </button>
-        ))}
-        <span className="ml-auto text-sm text-slate-400 font-medium">
-          {filtered.length} plan{filtered.length !== 1 ? "es" : ""}
-        </span>
+      <div className="space-y-2 mb-5">
+        {/* Category row */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Cat.</span>
+          {CATEGORY_FILTERS.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => handleCategoryClick(cat)}
+              className={categoryFilter === cat ? pillOn : pillOff}
+            >
+              {cat === "todos" ? "Todos" : cat.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+
+        {/* Subcategory row — only when comida is active */}
+        {categoryFilter === "comida" && (
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Tipo</span>
+            {FOOD_SUBCATEGORIES.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => handleSubcategoryClick(value)}
+                className={subcategoryFilter === value ? pillOn : pillOff}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Level row */}
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Nivel</span>
+          {LEVEL_FILTERS.map(({ value, label }) => (
+            <button
+              key={String(value)}
+              onClick={() => handleLevelClick(value)}
+              className={
+                levelFilter === value && value !== null
+                  ? value === 1
+                    ? `${pillBase} bg-emerald-500 text-white`
+                    : value === 2
+                    ? `${pillBase} bg-amber-500 text-white`
+                    : value === 3
+                    ? `${pillBase} bg-violet-500 text-white`
+                    : pillOn
+                  : value === null && levelFilter === null
+                  ? pillOn
+                  : pillOff
+              }
+            >
+              {label}
+            </button>
+          ))}
+          <span className="ml-auto text-sm text-slate-400 font-medium">
+            {filtered.length} plan{filtered.length !== 1 ? "es" : ""}
+          </span>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
