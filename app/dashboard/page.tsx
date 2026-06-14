@@ -19,7 +19,8 @@ async function getSuggestions(level: number): Promise<PlanSuggestion[]> {
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/plans/new");
+  if (!session) redirect("/login");
+  if (session.user.role !== "ADMIN") redirect("/plans/new");
 
   const trackings = await prisma.tracking.findMany({ orderBy: { level: "asc" } });
 

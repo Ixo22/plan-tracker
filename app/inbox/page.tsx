@@ -7,7 +7,8 @@ import NavBar from "@/components/NavBar";
 
 export default async function InboxPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/plans/new");
+  if (!session) redirect("/login");
+  if (session.user.role !== "ADMIN") redirect("/plans/new");
 
   const plans = await prisma.plan.findMany({
     include: { created_by: { select: { username: true } } },
