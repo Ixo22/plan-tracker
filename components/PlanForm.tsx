@@ -76,7 +76,7 @@ export default function PlanForm() {
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Ej: Barceloneta, Barcelona"
+          placeholder="Ej: Principe Pío, Madrid"
           className={inputCls}
         />
       </div>
