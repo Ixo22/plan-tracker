@@ -21,19 +21,15 @@ const FOOD_SUBCATEGORIES = [
 
 type Status = "idle" | "loading" | "success" | "error";
 
+const inputCls =
+  "w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-white";
+
 export default function PlanForm() {
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [status, setStatus] = useState<Status>("idle");
-
-  function reset() {
-    setTitle("");
-    setLocation("");
-    setCategory("");
-    setSubcategory("");
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +42,7 @@ export default function PlanForm() {
     });
 
     if (res.ok) {
-      reset();
+      setTitle(""); setLocation(""); setCategory(""); setSubcategory("");
       setStatus("success");
       setTimeout(() => setStatus("idle"), 3000);
     } else {
@@ -56,9 +52,9 @@ export default function PlanForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5">
           Nombre del plan <span className="text-red-500">*</span>
         </label>
         <input
@@ -67,32 +63,33 @@ export default function PlanForm() {
           onChange={(e) => setTitle(e.target.value)}
           required
           placeholder="Ej: Cena romántica en la playa"
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={inputCls}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Ubicación <span className="text-gray-400 font-normal">(opcional)</span>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+          Ubicación{" "}
+          <span className="text-slate-400 font-normal">(opcional)</span>
         </label>
         <input
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Ej: Barceloneta, Barcelona"
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={inputCls}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5">
           Categoría <span className="text-red-500">*</span>
         </label>
         <select
           value={category}
           onChange={(e) => { setCategory(e.target.value); setSubcategory(""); }}
           required
-          className="w-full border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={inputCls}
         >
           <option value="">Selecciona una categoría</option>
           {CATEGORIES.map((c) => (
@@ -102,15 +99,11 @@ export default function PlanForm() {
       </div>
 
       {category === "comida" && (
-        <div className="animate-in fade-in duration-200">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
             Tipo de comida
           </label>
-          <select
-            value={subcategory}
-            onChange={(e) => setSubcategory(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className={inputCls}>
             <option value="">Selecciona el tipo</option>
             {FOOD_SUBCATEGORIES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
@@ -122,16 +115,20 @@ export default function PlanForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-60"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-semibold transition-colors disabled:opacity-60 text-sm"
       >
         {status === "loading" ? "Guardando..." : "Sugerir plan"}
       </button>
 
       {status === "success" && (
-        <p className="text-green-600 text-sm text-center font-medium">¡Plan añadido con éxito!</p>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3.5 py-2.5 text-center">
+          <p className="text-emerald-700 text-sm font-semibold">¡Plan añadido con éxito!</p>
+        </div>
       )}
       {status === "error" && (
-        <p className="text-red-500 text-sm text-center">Error al guardar. Inténtalo de nuevo.</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 text-center">
+          <p className="text-red-700 text-sm font-semibold">Error al guardar. Inténtalo de nuevo.</p>
+        </div>
       )}
     </form>
   );

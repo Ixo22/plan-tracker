@@ -4,23 +4,26 @@ const LEVEL_CONFIG = {
   1: {
     label: "Nivel 1",
     description: "Detalles diarios",
-    colors: "bg-green-50 border-green-300",
-    badge: "bg-green-100 text-green-800",
-    ring: "ring-green-300",
+    accent: "border-l-emerald-500",
+    dot: "bg-emerald-500",
+    numColor: "text-emerald-600",
+    badge: "bg-emerald-50 border-emerald-200 text-emerald-800",
   },
   2: {
     label: "Nivel 2",
     description: "Planes intermedios",
-    colors: "bg-yellow-50 border-yellow-300",
-    badge: "bg-yellow-100 text-yellow-800",
-    ring: "ring-yellow-300",
+    accent: "border-l-amber-500",
+    dot: "bg-amber-500",
+    numColor: "text-amber-600",
+    badge: "bg-amber-50 border-amber-200 text-amber-800",
   },
   3: {
     label: "Nivel 3",
     description: "Planes especiales",
-    colors: "bg-purple-50 border-purple-300",
-    badge: "bg-purple-100 text-purple-800",
-    ring: "ring-purple-300",
+    accent: "border-l-violet-500",
+    dot: "bg-violet-500",
+    numColor: "text-violet-600",
+    badge: "bg-violet-50 border-violet-200 text-violet-800",
   },
 } as const;
 
@@ -36,15 +39,15 @@ export default function LevelCounters({ trackings, suggestions }: Props) {
 
   if (trackings.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border p-12 text-center text-gray-500">
-        <p className="text-lg font-medium mb-1">Sin datos de seguimiento</p>
-        <p className="text-sm">Ejecuta el seed para inicializar los 3 niveles.</p>
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <p className="text-base font-semibold text-slate-700 mb-1">Sin datos de seguimiento</p>
+        <p className="text-sm text-slate-500">Ejecuta el seed para inicializar los 3 niveles.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {trackings.map((t) => {
         const cfg = LEVEL_CONFIG[t.level as keyof typeof LEVEL_CONFIG];
         const daysLeft = Math.ceil(
@@ -56,44 +59,59 @@ export default function LevelCounters({ trackings, suggestions }: Props) {
         return (
           <div
             key={t.level}
-            className={`rounded-2xl border-2 p-6 ${cfg.colors} ${isDue ? `ring-4 ring-red-400 ring-offset-2` : ""}`}
+            className={`bg-white rounded-2xl border border-slate-200 shadow-sm border-l-4 ${cfg.accent} overflow-hidden`}
           >
-            <div className="flex items-start justify-between mb-1">
-              <div>
-                <span className="font-bold text-lg">{cfg.label}</span>
-                <p className="text-xs text-gray-500 mt-0.5">{cfg.description}</p>
-              </div>
-              {isDue && (
-                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
-                  ¡Vence hoy!
-                </span>
-              )}
-            </div>
-
-            <div className="text-center py-6 border-t border-b border-current border-opacity-10 my-4">
-              <span className="text-6xl font-black tabular-nums">{isDue ? "0" : daysLeft}</span>
-              <p className="text-sm text-gray-500 mt-1">días restantes</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Próximo: {new Date(t.next_scheduled_at).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
-              </p>
-            </div>
-
-            {isDue && suggestion && (
-              <div className={`rounded-xl p-4 border ${cfg.badge} border-current border-opacity-20`}>
-                <p className="text-xs font-semibold uppercase tracking-wider opacity-60 mb-1">
-                  Sugerencia aleatoria
-                </p>
-                <p className="font-bold">{suggestion.title}</p>
-                {suggestion.location && (
-                  <p className="text-sm mt-0.5 opacity-75">📍 {suggestion.location}</p>
+            <div className="p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${cfg.dot}`} />
+                  <div>
+                    <p className="font-bold text-slate-900">{cfg.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{cfg.description}</p>
+                  </div>
+                </div>
+                {isDue && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                    ¡Hoy!
+                  </span>
                 )}
-                <p className="text-xs mt-2 opacity-50 capitalize">{suggestion.category.replace("_", " ")}</p>
               </div>
-            )}
 
-            {isDue && !suggestion && (
-              <div className="rounded-xl p-4 bg-white bg-opacity-50 text-center">
-                <p className="text-sm text-gray-500">No hay planes asignados a este nivel todavía.</p>
+              <div className="text-center py-4 border-t border-slate-100">
+                <span className={`text-7xl font-black tabular-nums leading-none ${cfg.numColor}`}>
+                  {isDue ? "0" : daysLeft}
+                </span>
+                <p className="text-sm font-medium text-slate-600 mt-2">días restantes</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {new Date(t.next_scheduled_at).toLocaleDateString("es-ES", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {isDue && (
+              <div className={`mx-5 mb-5 rounded-xl border p-4 ${cfg.badge}`}>
+                {suggestion ? (
+                  <>
+                    <p className="text-xs font-bold uppercase tracking-wider opacity-60 mb-1.5">
+                      🎲 Sugerencia aleatoria
+                    </p>
+                    <p className="font-bold text-sm">{suggestion.title}</p>
+                    {suggestion.location && (
+                      <p className="text-xs mt-1 opacity-75">📍 {suggestion.location}</p>
+                    )}
+                    <p className="text-xs mt-1 opacity-50 capitalize">
+                      {suggestion.category.replace("_", " ")}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-center opacity-70">
+                    Sin planes asignados a este nivel
+                  </p>
+                )}
               </div>
             )}
           </div>

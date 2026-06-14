@@ -9,17 +9,23 @@ export default async function NewPlanPage() {
   if (!session) redirect("/login");
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Sugerir un plan</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Hola, {session.user.name}</p>
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-slate-900 text-white">
+        <div className="max-w-lg mx-auto px-6 h-14 flex items-center justify-between">
+          <span className="font-bold tracking-tight">Plan Tracker</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-400">{session.user.name}</span>
+            <SignOutButton className="text-xs text-slate-400 hover:text-white transition-colors" />
           </div>
-          <SignOutButton />
+        </div>
+      </header>
+      <main className="max-w-lg mx-auto px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Sugerir un plan</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Añade una idea para hacer juntos</p>
         </div>
         <PlanForm />
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

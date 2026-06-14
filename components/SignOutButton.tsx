@@ -1,12 +1,13 @@
 "use client";
 import { signOut } from "next-auth/react";
 
-export default function SignOutButton() {
+interface Props {
+  className?: string;
+}
+
+export default function SignOutButton({ className = "text-sm text-slate-500 hover:text-slate-700 transition-colors" }: Props) {
   return (
-    <button
-      onClick={() => signOut({ callbackUrl: "/login" })}
-      className="text-sm text-gray-500 hover:text-gray-700 underline"
-    >
+    <button onClick={() => signOut({ callbackUrl: "/login" })} className={className}>
       Cerrar sesión
     </button>
   );

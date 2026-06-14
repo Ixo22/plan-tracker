@@ -3,8 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import LevelCounters from "@/components/LevelCounters";
-import SignOutButton from "@/components/SignOutButton";
-import Link from "next/link";
+import NavBar from "@/components/NavBar";
 import type { Plan } from "@prisma/client";
 
 async function getRandomSuggestion(level: number): Promise<Plan | null> {
@@ -26,26 +25,15 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Hola, {session.user.name}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/inbox"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              Bandeja de entrada
-            </Link>
-            <SignOutButton />
-          </div>
+    <div className="min-h-screen bg-slate-50">
+      <NavBar username={session.user.name ?? "admin"} current="dashboard" />
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Seguimiento de los 3 niveles de actividad</p>
         </div>
-
         <LevelCounters trackings={trackings} suggestions={suggestions} />
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
