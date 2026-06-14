@@ -141,9 +141,10 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
     startTransition(() => router.refresh());
   }
 
-  const pillBase = "px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap";
-  const pillOff = `${pillBase} bg-white text-slate-600 border border-slate-200 active:bg-slate-50`;
+  const pillBase = "px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap";
+  const pillOff = `${pillBase} bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300`;
   const pillOn = `${pillBase} bg-slate-900 text-white`;
+  const selectCls = "flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500";
 
   function levelPillOn(value: number) {
     if (value === 1) return `${pillBase} bg-emerald-500 text-white`;
@@ -152,145 +153,225 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
     return pillOn;
   }
 
-  const SORT_LABELS: Record<SortKey, string> = { title: "Nombre", category: "Categoría", assigned_level: "Nivel" };
-
   return (
     <div>
-      {/* Filter rows — each scrolls horizontally on narrow screens */}
-      <div className="space-y-2 mb-4">
-        <div className="overflow-x-auto pb-0.5 -mx-6 px-6">
-          <div className="flex gap-2 items-center min-w-max">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide shrink-0">Cat.</span>
+      {/* ── MOBILE FILTERS: dropdowns (hidden on md+) ── */}
+      <div className="md:hidden mb-4 space-y-2">
+        <div className="flex gap-2">
+          <select
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setSubcategoryFilter(null); }}
+            className={selectCls}
+          >
             {availableCategories.map((cat) => (
-              <button key={cat} onClick={() => handleCategoryClick(cat)} className={categoryFilter === cat ? pillOn : pillOff}>
-                {cat === "todos" ? "Todos" : cat.replace("_", " ")}
-              </button>
+              <option key={cat} value={cat}>{cat === "todos" ? "Todas las categorías" : cat.replace("_", " ")}</option>
             ))}
-          </div>
-        </div>
-
-        {categoryFilter === "comida" && availableFoodSubcategories.length > 0 && (
-          <div className="overflow-x-auto pb-0.5 -mx-6 px-6">
-            <div className="flex gap-2 items-center min-w-max">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide shrink-0">Tipo</span>
-              {availableFoodSubcategories.map(({ value, label }) => (
-                <button key={value} onClick={() => handleSubcategoryClick(value)} className={subcategoryFilter === value ? pillOn : pillOff}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="overflow-x-auto pb-0.5 -mx-6 px-6">
-          <div className="flex gap-2 items-center min-w-max">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide shrink-0">Nivel</span>
+          </select>
+          <select
+            value={levelFilter === null ? "" : String(levelFilter)}
+            onChange={(e) => setLevelFilter(e.target.value === "" ? null : Number(e.target.value))}
+            className={selectCls}
+          >
             {availableLevels.map(({ value, label }) => (
-              <button
-                key={String(value)}
-                onClick={() => handleLevelClick(value)}
-                className={
-                  value === null
-                    ? levelFilter === null ? pillOn : pillOff
-                    : levelFilter === value ? levelPillOn(value) : pillOff
-                }
-              >
+              <option key={String(value)} value={value === null ? "" : String(value)}>{label}</option>
+            ))}
+          </select>
+        </div>
+        {categoryFilter === "comida" && availableFoodSubcategories.length > 0 && (
+          <select
+            value={subcategoryFilter ?? ""}
+            onChange={(e) => setSubcategoryFilter(e.target.value === "" ? null : e.target.value)}
+            className={selectCls}
+          >
+            <option value="">Todos los tipos</option>
+            {availableFoodSubcategories.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        )}
+        <p className="text-right text-xs text-slate-400 font-medium">
+          {filtered.length} plan{filtered.length !== 1 ? "es" : ""}
+        </p>
+      </div>
+
+      {/* ── DESKTOP FILTERS: pills (hidden on mobile) ── */}
+      <div className="hidden md:block space-y-2 mb-5">
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Cat.</span>
+          {availableCategories.map((cat) => (
+            <button key={cat} onClick={() => handleCategoryClick(cat)} className={categoryFilter === cat ? pillOn : pillOff}>
+              {cat === "todos" ? "Todos" : cat.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+        {categoryFilter === "comida" && availableFoodSubcategories.length > 0 && (
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Tipo</span>
+            {availableFoodSubcategories.map(({ value, label }) => (
+              <button key={value} onClick={() => handleSubcategoryClick(value)} className={subcategoryFilter === value ? pillOn : pillOff}>
                 {label}
               </button>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Sort + count bar */}
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-xs text-slate-400 font-medium shrink-0">Ordenar:</span>
-        {(["title", "category", "assigned_level"] as const).map((key) => (
-          <button
-            key={key}
-            onClick={() => toggleSort(key)}
-            className={`text-xs font-semibold flex items-center gap-0.5 transition-colors ${sortKey === key ? "text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-          >
-            {SORT_LABELS[key]}
-            <span>{sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : ""}</span>
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-slate-400 font-medium shrink-0">
-          {filtered.length} plan{filtered.length !== 1 ? "es" : ""}
-        </span>
-      </div>
-
-      {/* Card list */}
-      {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <p className="text-slate-400 text-sm">No hay planes con estos filtros.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((plan) => (
-            <div
-              key={plan.id}
-              className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 transition-opacity ${assigning === plan.id ? "opacity-40" : ""}`}
+        )}
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Nivel</span>
+          {availableLevels.map(({ value, label }) => (
+            <button
+              key={String(value)}
+              onClick={() => handleLevelClick(value)}
+              className={value === null ? (levelFilter === null ? pillOn : pillOff) : (levelFilter === value ? levelPillOn(value) : pillOff)}
             >
-              {/* Top row: title + level badge + delete */}
-              <div className="flex items-start gap-2 mb-1">
-                <p className="font-semibold text-slate-900 flex-1 leading-snug">{plan.title}</p>
-                {plan.assigned_level ? (
-                  <span className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold ${LEVEL_STYLES[plan.assigned_level as keyof typeof LEVEL_STYLES]}`}>
-                    N{plan.assigned_level}
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-slate-300 text-xs font-medium">Sin nivel</span>
-                )}
-                {confirmDelete === plan.id ? (
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => deletePlan(plan.id)} className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded-md">
-                      Eliminar
-                    </button>
-                    <button onClick={() => setConfirmDelete(null)} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDelete(plan.id)}
-                    className="shrink-0 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {/* Meta row */}
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-400 mb-3">
-                {plan.location && <span>📍 {plan.location}</span>}
-                <span className="capitalize">{plan.category.replace("_", " ")}{plan.subcategory ? ` · ${plan.subcategory}` : ""}</span>
-                <span>@{plan.created_by.username}</span>
-              </div>
-
-              {/* Assign buttons */}
-              <div className="flex gap-2">
-                {([1, 2, 3] as const).map((lvl) => (
-                  <button
-                    key={lvl}
-                    onClick={() => assignLevel(plan.id, lvl)}
-                    disabled={isPending || plan.assigned_level === lvl}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      plan.assigned_level === lvl
-                        ? LEVEL_ACTIVE[lvl]
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-600 active:scale-95"
-                    }`}
-                  >
-                    N{lvl}
-                  </button>
-                ))}
-              </div>
-            </div>
+              {label}
+            </button>
           ))}
+          <span className="ml-auto text-sm text-slate-400 font-medium">
+            {filtered.length} plan{filtered.length !== 1 ? "es" : ""}
+          </span>
         </div>
-      )}
+      </div>
+
+      {/* ── MOBILE: card list ── */}
+      <div className="md:hidden">
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <p className="text-slate-400 text-sm">No hay planes con estos filtros.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((plan) => (
+              <div
+                key={plan.id}
+                className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 transition-opacity ${assigning === plan.id ? "opacity-40" : ""}`}
+              >
+                <div className="flex items-start gap-2 mb-1">
+                  <p className="font-semibold text-slate-900 flex-1 leading-snug">{plan.title}</p>
+                  {plan.assigned_level ? (
+                    <span className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold ${LEVEL_STYLES[plan.assigned_level as keyof typeof LEVEL_STYLES]}`}>
+                      N{plan.assigned_level}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-slate-300 text-xs font-medium">Sin nivel</span>
+                  )}
+                  {confirmDelete === plan.id ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => deletePlan(plan.id)} className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded-md">Eliminar</button>
+                      <button onClick={() => setConfirmDelete(null)} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">No</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmDelete(plan.id)} className="shrink-0 p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-400 mb-3">
+                  {plan.location && <span>📍 {plan.location}</span>}
+                  <span className="capitalize">{plan.category.replace("_", " ")}{plan.subcategory ? ` · ${plan.subcategory}` : ""}</span>
+                  <span>@{plan.created_by.username}</span>
+                </div>
+                <div className="flex gap-2">
+                  {([1, 2, 3] as const).map((lvl) => (
+                    <button
+                      key={lvl}
+                      onClick={() => assignLevel(plan.id, lvl)}
+                      disabled={isPending || plan.assigned_level === lvl}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${plan.assigned_level === lvl ? LEVEL_ACTIVE[lvl] : "bg-slate-100 hover:bg-slate-200 text-slate-600"}`}
+                    >
+                      N{lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── DESKTOP: table ── */}
+      <div className="hidden md:block">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {filtered.length === 0 ? (
+            <p className="text-slate-400 text-center py-16 text-sm">No hay planes con estos filtros.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  {(["title", "category", "assigned_level"] as const).map((key) => {
+                    const labels: Record<SortKey, string> = { title: "Plan", category: "Categoría", assigned_level: "Nivel" };
+                    const active = sortKey === key;
+                    return (
+                      <th key={key} onClick={() => toggleSort(key)} className="px-5 py-3 text-left cursor-pointer select-none group">
+                        <span className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide transition-colors ${active ? "text-slate-900" : "text-slate-500 group-hover:text-slate-700"}`}>
+                          {labels[key]}
+                          <span className="text-[10px]">{active ? (sortDir === "asc" ? "↑" : "↓") : <span className="opacity-30">↕</span>}</span>
+                        </span>
+                      </th>
+                    );
+                  })}
+                  <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Autor</th>
+                  <th className="text-center px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Asignar</th>
+                  <th className="px-5 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((plan) => (
+                  <tr key={plan.id} className={`hover:bg-slate-50 transition-colors ${assigning === plan.id ? "opacity-40" : ""}`}>
+                    <td className="px-5 py-4">
+                      <p className="font-semibold text-slate-900">{plan.title}</p>
+                      {plan.location && <p className="text-xs text-slate-400 mt-0.5">📍 {plan.location}</p>}
+                    </td>
+                    <td className="px-5 py-4 text-slate-600 capitalize text-sm">
+                      {plan.category.replace("_", " ")}
+                      {plan.subcategory && <span className="block text-xs text-slate-400 capitalize">{plan.subcategory}</span>}
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      {plan.assigned_level ? (
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${LEVEL_STYLES[plan.assigned_level as keyof typeof LEVEL_STYLES]}`}>
+                          N{plan.assigned_level}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs font-medium">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-slate-600 text-sm">{plan.created_by.username}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-center gap-1.5">
+                        {([1, 2, 3] as const).map((lvl) => (
+                          <button
+                            key={lvl}
+                            onClick={() => assignLevel(plan.id, lvl)}
+                            disabled={isPending || plan.assigned_level === lvl}
+                            title={`Nivel ${lvl}`}
+                            className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${plan.assigned_level === lvl ? LEVEL_ACTIVE[lvl] : "bg-slate-100 hover:bg-slate-200 text-slate-600"}`}
+                          >
+                            {lvl}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      {confirmDelete === plan.id ? (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button onClick={() => deletePlan(plan.id)} className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-md transition-colors">Eliminar</button>
+                          <button onClick={() => setConfirmDelete(null)} className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-md transition-colors">Cancelar</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDelete(plan.id)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Eliminar plan">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
