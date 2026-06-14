@@ -26,7 +26,7 @@ export default async function NewPlanPage() {
           </div>
         </header>
       )}
-      <main className="max-w-lg mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-lg mx-auto px-4 sm:px-6 py-8 pb-24 md:pb-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">Nuevo plan</h1>
           <p className="text-slate-500 text-sm mt-0.5">Añade una idea para hacer juntos</p>

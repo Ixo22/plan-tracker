@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar username={session.user.name ?? "admin"} current="dashboard" />
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 text-sm mt-0.5">Seguimiento de los 3 niveles de actividad</p>
