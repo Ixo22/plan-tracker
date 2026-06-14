@@ -1,6 +1,9 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
+
+type SortKey = "title" | "category" | "assigned_level";
+type SortDir = "asc" | "desc";
 
 type Plan = {
   id: string;
@@ -33,9 +36,31 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
   const [categoryFilter, setCategoryFilter] = useState("todos");
   const [assigning, setAssigning] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("title");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const filtered =
-    categoryFilter === "todos" ? plans : plans.filter((p) => p.category === categoryFilter);
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const filtered = useMemo(() => {
+    const base = categoryFilter === "todos" ? plans : plans.filter((p) => p.category === categoryFilter);
+    return [...base].sort((a, b) => {
+      let av: string | number = a[sortKey] ?? "";
+      let bv: string | number = b[sortKey] ?? "";
+      if (sortKey === "assigned_level") {
+        av = a.assigned_level ?? 99;
+        bv = b.assigned_level ?? 99;
+      }
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [plans, categoryFilter, sortKey, sortDir]);
 
   async function assignLevel(planId: string, level: number) {
     setAssigning(planId);
@@ -82,10 +107,25 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Plan</th>
-                <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Categoría</th>
+                {(["title", "category", "assigned_level"] as const).map((key) => {
+                  const labels: Record<SortKey, string> = { title: "Plan", category: "Categoría", assigned_level: "Nivel" };
+                  const active = sortKey === key;
+                  return (
+                    <th
+                      key={key}
+                      onClick={() => toggleSort(key)}
+                      className="px-5 py-3 text-left cursor-pointer select-none group"
+                    >
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide transition-colors ${active ? "text-slate-900" : "text-slate-500 group-hover:text-slate-700"}`}>
+                        {labels[key]}
+                        <span className="text-[10px]">
+                          {active ? (sortDir === "asc" ? "↑" : "↓") : <span className="opacity-30">↕</span>}
+                        </span>
+                      </span>
+                    </th>
+                  );
+                })}
                 <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Autor</th>
-                <th className="text-center px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Nivel</th>
                 <th className="text-center px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Asignar</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -108,7 +148,6 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
                       <span className="block text-xs text-slate-400 capitalize">{plan.subcategory}</span>
                     )}
                   </td>
-                  <td className="px-5 py-4 text-slate-600 text-sm">{plan.created_by.username}</td>
                   <td className="px-5 py-4 text-center">
                     {plan.assigned_level ? (
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${LEVEL_STYLES[plan.assigned_level as keyof typeof LEVEL_STYLES]}`}>
@@ -118,6 +157,7 @@ export default function PlanInbox({ plans }: { plans: Plan[] }) {
                       <span className="text-slate-300 text-xs font-medium">—</span>
                     )}
                   </td>
+                  <td className="px-5 py-4 text-slate-600 text-sm">{plan.created_by.username}</td>
                   <td className="px-5 py-4">
                     <div className="flex justify-center gap-1.5">
                       {([1, 2, 3] as const).map((lvl) => (
