@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plan Tracker
 
-## Getting Started
+Organiza planes con tu pareja, amigos o cualquier grupo para que nunca os falte algo que hacer.
 
-First, run the development server:
+Sugiere ideas, asígnalas a un nivel de urgencia y recibe notificaciones cuando toca cumplirlas — así siempre tenéis un plan esperando.
+
+## Qué hace
+
+- **Bandeja de entrada compartida** — cualquier miembro puede sugerir planes (una cena, un viaje, una actividad) y el admin los organiza por nivel de prioridad.
+- **3 niveles de actividad** — N1 para planes del día a día, N2 para escapadas de fin de semana y N3 para planes más especiales. Cada nivel tiene un contador de días para saber cuándo toca el siguiente.
+- **Notificaciones por email** — cuando se acerca la fecha de un nivel recibes un aviso para no perderte nada.
+- **Categorías dinámicas** — organiza los planes por categoría (viaje, comida, cultura…) y añade las tuyas propias.
+- **Página demo pública** — puedes ver cómo funciona en `/demo` sin necesidad de registrarte.
+
+## Stack
+
+- [Next.js 16](https://nextjs.org) — framework frontend y API routes
+- [Prisma 7](https://www.prisma.io) + PostgreSQL — base de datos
+- [NextAuth 4](https://next-auth.js.org) — autenticación con sesiones JWT
+- [Resend](https://resend.com) — envío de notificaciones por email
+- [Tailwind CSS 4](https://tailwindcss.com) — estilos
+
+## Desarrollo local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Crea un archivo `.env.local` con las variables necesarias:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL=postgresql://...
+NEXTAUTH_SECRET=...
+NEXTAUTH_URL=http://localhost:3000
+ADMIN_USERNAME=...
+ADMIN_PASSWORD=...
+MEMBER_USERNAME=...
+MEMBER_PASSWORD=...
+RESEND_API_KEY=...          # opcional, para notificaciones
+NOTIFICATION_EMAIL=...      # email donde llegan los avisos
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Luego aplica las migraciones y el seed inicial:
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx prisma migrate deploy
+npx tsx prisma/seed.ts
+```
