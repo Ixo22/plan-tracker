@@ -24,12 +24,19 @@ model Plan {
   id             String   @id @default(cuid())
   title          String
   location       String?
+  description    String?
   category       String
   subcategory    String?
   assigned_level Int?
   created_by     User     @relation(fields: [created_by_id], references: [id])
   created_by_id  String
   createdAt      DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 }
 
 // One record per level (1, 2, 3) — tracks the scheduling window for each priority tier.

@@ -52,6 +52,26 @@ async function main() {
     });
   }
 
+  const initialCategories = [
+    "Aire libre",
+    "Comida",
+    "Comida casera",
+    "Entretenimiento",
+    "Viaje",
+    "Cultura",
+    "Detalle",
+    "Cañas",
+  ];
+
+  for (const name of initialCategories) {
+    await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+  console.log(`  Categorías: ${initialCategories.length} inicializadas`);
+
   console.log("Seed completado.");
 }
 

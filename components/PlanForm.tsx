@@ -1,23 +1,6 @@
 "use client";
 import { useState } from "react";
-
-const CATEGORIES = [
-  { value: "aire_libre", label: "Aire libre" },
-  { value: "comida", label: "Comida" },
-  { value: "entretenimiento", label: "Entretenimiento" },
-  { value: "viaje", label: "Viaje" },
-  { value: "cultura", label: "Cultura" },
-];
-
-const FOOD_SUBCATEGORIES = [
-  { value: "italiana", label: "Italiana" },
-  { value: "sushi", label: "Sushi" },
-  { value: "hamburguesas", label: "Hamburguesas" },
-  { value: "mexicana", label: "Mexicana" },
-  { value: "asiatica", label: "Asiática" },
-  { value: "tapas", label: "Tapas" },
-  { value: "otra", label: "Otra" },
-];
+import CategorySelect from "./CategorySelect";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -27,6 +10,7 @@ const inputCls =
 export default function PlanForm() {
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -38,11 +22,21 @@ export default function PlanForm() {
     const res = await fetch("/api/plans", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, location: location || null, category, subcategory: subcategory || null }),
+      body: JSON.stringify({
+        title,
+        location: location || null,
+        description: description || null,
+        category,
+        subcategory: subcategory || null,
+      }),
     });
 
     if (res.ok) {
-      setTitle(""); setLocation(""); setCategory(""); setSubcategory("");
+      setTitle("");
+      setLocation("");
+      setDescription("");
+      setCategory("");
+      setSubcategory("");
       setStatus("success");
       setTimeout(() => setStatus("idle"), 3000);
     } else {
@@ -83,34 +77,43 @@ export default function PlanForm() {
 
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-          Categoría <span className="text-red-500">*</span>
+          Descripción{" "}
+          <span className="text-slate-400 font-normal">(opcional)</span>
         </label>
-        <select
-          value={category}
-          onChange={(e) => { setCategory(e.target.value); setSubcategory(""); }}
-          required
-          className={inputCls}
-        >
-          <option value="">Selecciona una categoría</option>
-          {CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>{c.label}</option>
-          ))}
-        </select>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+          placeholder="Detalles del plan, qué incluye, notas..."
+          className={`${inputCls} resize-none`}
+        />
       </div>
 
-      {category === "comida" && (
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-            Tipo de comida
-          </label>
-          <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className={inputCls}>
-            <option value="">Selecciona el tipo</option>
-            {FOOD_SUBCATEGORIES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+          Categoría <span className="text-red-500">*</span>
+        </label>
+        <CategorySelect
+          value={category}
+          onChange={(v) => { setCategory(v); setSubcategory(""); }}
+          required
+          className={inputCls}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+          Subcategoría{" "}
+          <span className="text-slate-400 font-normal">(opcional)</span>
+        </label>
+        <input
+          type="text"
+          value={subcategory}
+          onChange={(e) => setSubcategory(e.target.value)}
+          placeholder="Ej: italiana, sushi, tapas..."
+          className={inputCls}
+        />
+      </div>
 
       <button
         type="submit"
