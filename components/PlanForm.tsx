@@ -97,7 +97,6 @@ export default function PlanForm() {
           value={category}
           onChange={(v) => { setCategory(v); setSubcategory(""); }}
           required
-          className={inputCls}
         />
       </div>
 

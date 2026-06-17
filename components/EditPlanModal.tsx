@@ -130,7 +130,6 @@ export default function EditPlanModal({ plan, onClose, onSaved }: Props) {
               value={category}
               onChange={(v) => { setCategory(v); setSubcategory(""); }}
               required
-              className={inputCls}
             />
           </div>
 
