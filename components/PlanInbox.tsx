@@ -58,8 +58,6 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
   const [levelFilter, setLevelFilter] = useState<number | null>(null);
   const [subcategoryFilter, setSubcategoryFilter] = useState<string | null>(null);
   const [userFilter, setUserFilter] = useState<string | null>(null);
-  const [assigning, setAssigning] = useState<string | null>(null);
-  const [togglingOneTime, setTogglingOneTime] = useState<string | null>(null);
   const [showPriorityDate, setShowPriorityDate] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -128,13 +126,12 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
   }, [plans, categoryFilter, userFilter, levelFilter, sortKey, sortDir]);
 
   async function toggleOneTime(planId: string, current: boolean) {
-    setTogglingOneTime(planId);
+    setPlans((prev) => prev.map((p) => p.id === planId ? { ...p, is_one_time: !current } : p));
     await fetch(`/api/plans/${planId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_one_time: !current }),
     });
-    setTogglingOneTime(null);
     startTransition(() => router.refresh());
   }
 
@@ -152,6 +149,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
   }
 
   async function saveAvailableUntil(planId: string, value: string) {
+    setPlans((prev) => prev.map((p) => p.id === planId ? { ...p, available_until: value || null } : p));
     await fetch(`/api/plans/${planId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -161,19 +159,19 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
   }
 
   async function assignLevel(planId: string, level: number) {
-    setAssigning(planId);
+    setPlans((prev) => prev.map((p) => p.id === planId ? { ...p, assigned_level: level } : p));
     await fetch(`/api/plans/${planId}/assign-level`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ level }),
     });
-    setAssigning(null);
     startTransition(() => router.refresh());
   }
 
   async function deletePlan(planId: string) {
-    await fetch(`/api/plans/${planId}`, { method: "DELETE" });
+    setPlans((prev) => prev.filter((p) => p.id !== planId));
     setConfirmDelete(null);
+    fetch(`/api/plans/${planId}`, { method: "DELETE" });
     startTransition(() => router.refresh());
   }
 
@@ -329,7 +327,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
             {filtered.map((plan) => (
               <div
                 key={plan.id}
-                className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 transition-opacity ${assigning === plan.id ? "opacity-40" : ""}`}
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"
               >
                 <div className="flex items-start gap-2 mb-1">
                   <p className="font-semibold text-slate-900 flex-1 leading-snug">{plan.title}</p>
@@ -380,7 +378,6 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                 <div className="flex items-center gap-3 pt-0.5">
                   <button
                     onClick={() => toggleOneTime(plan.id, plan.is_one_time)}
-                    disabled={togglingOneTime === plan.id}
                     title="Plan de una sola vez"
                     className={`px-2 py-0.5 rounded text-xs font-bold border transition-colors ${plan.is_one_time ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300"}`}
                   >
@@ -449,7 +446,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((plan) => (
-                  <tr key={plan.id} className={`hover:bg-slate-50 transition-colors ${assigning === plan.id ? "opacity-40" : ""}`}>
+                  <tr key={plan.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-4">
                       <p className="font-semibold text-slate-900">{plan.title}</p>
                       {plan.location && <p className="text-xs text-slate-400 mt-0.5">📍 {plan.location}</p>}
@@ -473,7 +470,6 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => toggleOneTime(plan.id, plan.is_one_time)}
-                          disabled={togglingOneTime === plan.id}
                           title="Plan de una sola vez"
                           className={`px-2 py-0.5 rounded text-xs font-bold border transition-colors ${plan.is_one_time ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300"}`}
                         >
