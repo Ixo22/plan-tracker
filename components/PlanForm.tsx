@@ -2,6 +2,16 @@
 import { useState } from "react";
 import CategorySelect from "./CategorySelect";
 
+const ENTERTAINMENT_SUBCATEGORIES = [
+  { value: "cine", label: "Cine" },
+  { value: "musical", label: "Musical" },
+  { value: "teatro", label: "Teatro" },
+  { value: "concierto", label: "Concierto" },
+  { value: "exposicion", label: "Exposición" },
+  { value: "escape_room", label: "Escape room" },
+  { value: "otra", label: "Otra" },
+];
+
 type Status = "idle" | "loading" | "success" | "error";
 
 const inputCls =
@@ -113,6 +123,20 @@ export default function PlanForm() {
           className={inputCls}
         />
       </div>
+
+      {category === "entretenimiento" && (
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Tipo de entretenimiento
+          </label>
+          <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className={inputCls}>
+            <option value="">Selecciona el tipo</option>
+            {ENTERTAINMENT_SUBCATEGORIES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <button
         type="submit"
