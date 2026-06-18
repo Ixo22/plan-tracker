@@ -6,6 +6,8 @@ type Plan = {
   title: string;
   location: string | null;
   category: string;
+  is_one_time: boolean;
+  available_until: string | null;
 };
 
 interface Props {
@@ -55,14 +57,26 @@ export default function SuggestionsBox({ level, initial, badge }: Props) {
         <p className="text-xs opacity-60">Sin planes asignados a este nivel</p>
       ) : (
         <ul className="space-y-2">
-          {plans.map((plan) => (
-            <li key={plan.id}>
-              <span className="font-semibold text-sm leading-tight block">{plan.title}</span>
-              {plan.location && (
-                <span className="text-xs opacity-60">📍 {plan.location}</span>
-              )}
-            </li>
-          ))}
+          {plans.map((plan) => {
+            const isUrgent = plan.available_until
+              ? new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+              : false;
+            return (
+              <li key={plan.id}>
+                <span className="font-semibold text-sm leading-tight block">
+                  {isUrgent && <span className="mr-1">🔥</span>}
+                  {plan.title}
+                  {plan.is_one_time && <span className="ml-1.5 text-[10px] font-bold opacity-60">1×</span>}
+                </span>
+                {plan.location && <span className="text-xs opacity-60">📍 {plan.location}</span>}
+                {plan.available_until && (
+                  <span className="text-xs opacity-60 block">
+                    Hasta {new Date(plan.available_until).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

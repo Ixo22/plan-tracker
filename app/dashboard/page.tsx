@@ -5,16 +5,21 @@ import { prisma } from "@/lib/prisma";
 import LevelCounters, { type PlanSuggestion } from "@/components/LevelCounters";
 import NavBar from "@/components/NavBar";
 
-function pickRandom<T>(arr: T[], n: number): T[] {
-  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
-}
-
 async function getSuggestions(level: number): Promise<PlanSuggestion[]> {
   const plans = await prisma.plan.findMany({
     where: { assigned_level: level },
     select: { id: true, title: true, location: true, category: true, is_one_time: true, available_until: true },
   });
-  return pickRandom(plans, 3).map((p) => ({
+
+  const cutoff = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+  const urgent = plans
+    .filter((p) => p.available_until && new Date(p.available_until) <= cutoff)
+    .sort((a, b) => new Date(a.available_until!).getTime() - new Date(b.available_until!).getTime());
+  const normal = plans
+    .filter((p) => !p.available_until || new Date(p.available_until) > cutoff)
+    .sort(() => Math.random() - 0.5);
+
+  return [...urgent, ...normal].slice(0, 3).map((p) => ({
     ...p,
     available_until: p.available_until ? p.available_until.toISOString() : null,
   }));
