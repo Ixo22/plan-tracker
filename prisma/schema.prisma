@@ -6,31 +6,36 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  ADMIN
-  MEMBER
-}
-
 model User {
   id            String   @id @default(cuid())
   username      String   @unique
   password_hash String
   role          Role     @default(MEMBER)
-  plans         Plan[]
   createdAt     DateTime @default(now())
+  plans         Plan[]
 }
 
 model Plan {
-  id             String   @id @default(cuid())
-  title          String
-  location       String?
-  description    String?
-  category       String
-  subcategory    String?
-  assigned_level Int?
-  created_by     User     @relation(fields: [created_by_id], references: [id])
-  created_by_id  String
-  createdAt      DateTime @default(now())
+  id              String    @id @default(cuid())
+  title           String
+  location        String?
+  description     String?
+  category        String
+  subcategory     String?
+  assigned_level  Int?
+  created_by      User      @relation(fields: [created_by_id], references: [id])
+  created_by_id   String
+  createdAt       DateTime  @default(now())
+  is_one_time     Boolean   @default(false)
+  available_until DateTime?
+}
+
+// One record per level (1, 2, 3) — tracks the scheduling window for each priority tier.
+model Tracking {
+  id                String   @id @default(cuid())
+  level             Int      @unique
+  last_done_at      DateTime
+  next_scheduled_at DateTime
 }
 
 model Category {
@@ -39,10 +44,7 @@ model Category {
   createdAt DateTime @default(now())
 }
 
-// One record per level (1, 2, 3) — tracks the scheduling window for each priority tier.
-model Tracking {
-  id                 String   @id @default(cuid())
-  level              Int      @unique
-  last_done_at       DateTime
-  next_scheduled_at  DateTime
+enum Role {
+  ADMIN
+  MEMBER
 }

@@ -10,6 +10,8 @@ type Plan = {
   category: string;
   subcategory: string | null;
   assigned_level: number | null;
+  is_one_time: boolean;
+  available_until: string | null;
   createdAt: Date;
   created_by: { username: string };
 };

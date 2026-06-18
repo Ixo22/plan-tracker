@@ -6,6 +6,8 @@ export type PlanSuggestion = {
   title: string;
   location: string | null;
   category: string;
+  is_one_time: boolean;
+  available_until: string | null;
 };
 
 const LEVEL_CONFIG = {

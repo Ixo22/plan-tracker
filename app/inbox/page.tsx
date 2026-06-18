@@ -10,10 +10,15 @@ export default async function InboxPage() {
   if (!session) redirect("/login");
   if (session.user.role !== "ADMIN") redirect("/plans/new");
 
-  const plans = await prisma.plan.findMany({
+  const raw = await prisma.plan.findMany({
     include: { created_by: { select: { username: true } } },
     orderBy: { createdAt: "desc" },
   });
+
+  const plans = raw.map((p) => ({
+    ...p,
+    available_until: p.available_until ? p.available_until.toISOString() : null,
+  }));
 
   return (
     <div className="min-h-screen bg-slate-50">

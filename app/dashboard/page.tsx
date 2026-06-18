@@ -12,9 +12,12 @@ function pickRandom<T>(arr: T[], n: number): T[] {
 async function getSuggestions(level: number): Promise<PlanSuggestion[]> {
   const plans = await prisma.plan.findMany({
     where: { assigned_level: level },
-    select: { id: true, title: true, location: true, category: true },
+    select: { id: true, title: true, location: true, category: true, is_one_time: true, available_until: true },
   });
-  return pickRandom(plans, 3);
+  return pickRandom(plans, 3).map((p) => ({
+    ...p,
+    available_until: p.available_until ? p.available_until.toISOString() : null,
+  }));
 }
 
 export default async function DashboardPage() {

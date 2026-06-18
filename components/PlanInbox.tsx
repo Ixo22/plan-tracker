@@ -14,6 +14,8 @@ type Plan = {
   category: string;
   subcategory: string | null;
   assigned_level: number | null;
+  is_one_time: boolean;
+  available_until: string | null;
   createdAt: Date;
   created_by: { username: string };
 };
@@ -30,6 +32,16 @@ const LEVEL_ACTIVE = {
   3: "bg-violet-500 text-white",
 } as const;
 
+const ENTERTAINMENT_SUBCATEGORIES = [
+  { value: "cine", label: "Cine" },
+  { value: "musical", label: "Musical" },
+  { value: "teatro", label: "Teatro" },
+  { value: "concierto", label: "Concierto" },
+  { value: "exposicion", label: "Exposición" },
+  { value: "escape_room", label: "Escape room" },
+  { value: "otra", label: "Otra" },
+];
+
 const LEVEL_FILTERS = [
   { value: null, label: "Todos" },
   { value: 1, label: "N1" },
@@ -44,8 +56,10 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
   const [categoryFilter, setCategoryFilter] = useState("todos");
   const [levelFilter, setLevelFilter] = useState<number | null>(null);
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string | null>(null);
   const [userFilter, setUserFilter] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [togglingOneTime, setTogglingOneTime] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("title");
@@ -53,6 +67,11 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
 
   function handleCategoryClick(cat: string) {
     setCategoryFilter(cat !== "todos" && categoryFilter === cat ? "todos" : cat);
+    setSubcategoryFilter(null);
+  }
+
+  function handleSubcategoryClick(val: string) {
+    setSubcategoryFilter(subcategoryFilter === val ? null : val);
   }
 
   function handleLevelClick(val: number | null) {
@@ -71,6 +90,13 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
 
   const availableUsers = useMemo(() => {
     return [...new Set(plans.map((p) => p.created_by.username))].sort();
+  }, [plans]);
+
+  const availableEntertainmentSubcategories = useMemo(() => {
+    const subs = new Set(
+      plans.filter((p) => p.category === "entretenimiento").map((p) => p.subcategory)
+    );
+    return ENTERTAINMENT_SUBCATEGORIES.filter((f) => subs.has(f.value));
   }, [plans]);
 
   const availableLevels = useMemo(() => {
@@ -99,6 +125,26 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [plans, categoryFilter, userFilter, levelFilter, sortKey, sortDir]);
+
+  async function toggleOneTime(planId: string, current: boolean) {
+    setTogglingOneTime(planId);
+    await fetch(`/api/plans/${planId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_one_time: !current }),
+    });
+    setTogglingOneTime(null);
+    startTransition(() => router.refresh());
+  }
+
+  async function saveAvailableUntil(planId: string, value: string) {
+    await fetch(`/api/plans/${planId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ available_until: value || null }),
+    });
+    startTransition(() => router.refresh());
+  }
 
   async function assignLevel(planId: string, level: number) {
     setAssigning(planId);
@@ -193,6 +239,18 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
             ))}
           </select>
         )}
+        {categoryFilter === "entretenimiento" && availableEntertainmentSubcategories.length > 0 && (
+          <select
+            value={subcategoryFilter ?? ""}
+            onChange={(e) => setSubcategoryFilter(e.target.value === "" ? null : e.target.value)}
+            className={selectCls}
+          >
+            <option value="">Todos los tipos</option>
+            {availableEntertainmentSubcategories.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        )}
         <p className="text-right text-xs text-slate-400 font-medium">
           {filtered.length} plan{filtered.length !== 1 ? "es" : ""}
         </p>
@@ -215,6 +273,16 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
             {availableUsers.map((u) => (
               <button key={u} onClick={() => setUserFilter(userFilter === u ? null : u)} className={userFilter === u ? pillOn : pillOff}>
                 @{u}
+              </button>
+            ))}
+          </div>
+        )}
+        {categoryFilter === "entretenimiento" && availableEntertainmentSubcategories.length > 0 && (
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-16 shrink-0">Tipo</span>
+            {availableEntertainmentSubcategories.map(({ value, label }) => (
+              <button key={value} onClick={() => handleSubcategoryClick(value)} className={subcategoryFilter === value ? pillOn : pillOff}>
+                {label}
               </button>
             ))}
           </div>
@@ -283,7 +351,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                 {plan.description && (
                   <p className="text-xs text-slate-500 mb-3 leading-relaxed">{plan.description}</p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-2">
                   {([1, 2, 3] as const).map((lvl) => (
                     <button
                       key={lvl}
@@ -294,6 +362,27 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                       N{lvl}
                     </button>
                   ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleOneTime(plan.id, plan.is_one_time)}
+                    disabled={togglingOneTime === plan.id}
+                    title="Plan de una sola vez"
+                    className={`px-2 py-0.5 rounded text-xs font-bold border transition-colors ${plan.is_one_time ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300"}`}
+                  >
+                    1×
+                  </button>
+                  <input
+                    key={plan.available_until ?? "null"}
+                    type="date"
+                    defaultValue={plan.available_until ? plan.available_until.slice(0, 10) : ""}
+                    onBlur={(e) => saveAvailableUntil(plan.id, e.target.value)}
+                    title="Disponible hasta"
+                    className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+                  />
+                  {plan.available_until && new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) && (
+                    <span className="text-xs font-bold text-red-500">🔥 Urgente</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -323,6 +412,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                     );
                   })}
                   <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Autor</th>
+                  <th className="text-left px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Flags</th>
                   <th className="text-center px-5 py-3 font-semibold text-slate-500 text-xs uppercase tracking-wide">Asignar</th>
                   <th className="px-5 py-3" />
                 </tr>
@@ -349,6 +439,31 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                       )}
                     </td>
                     <td className="px-5 py-4 text-slate-600 text-sm">{plan.created_by.username}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleOneTime(plan.id, plan.is_one_time)}
+                          disabled={togglingOneTime === plan.id}
+                          title="Plan de una sola vez"
+                          className={`px-2 py-0.5 rounded text-xs font-bold border transition-colors ${plan.is_one_time ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300"}`}
+                        >
+                          1×
+                        </button>
+                        <div className="flex flex-col gap-0.5">
+                          <input
+                            key={plan.available_until ?? "null"}
+                            type="date"
+                            defaultValue={plan.available_until ? plan.available_until.slice(0, 10) : ""}
+                            onBlur={(e) => saveAvailableUntil(plan.id, e.target.value)}
+                            title="Disponible hasta"
+                            className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+                          />
+                          {plan.available_until && new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) && (
+                            <span className="text-xs font-bold text-red-500">🔥 Urgente</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-5 py-4">
                       <div className="flex justify-center gap-1.5">
                         {([1, 2, 3] as const).map((lvl) => (

@@ -18,17 +18,27 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { title, location, description, category, subcategory } = await req.json();
+  const body = await req.json();
+  const { title, location, description, category, subcategory } = body;
+
+  const data: Record<string, unknown> = {
+    title: title ?? plan.title,
+    location: location !== undefined ? (location || null) : plan.location,
+    description: description !== undefined ? (description || null) : plan.description,
+    category: category ?? plan.category,
+    subcategory: subcategory !== undefined ? (subcategory || null) : plan.subcategory,
+  };
+
+  if (session.user.role === "ADMIN") {
+    if (typeof body.is_one_time === "boolean") data.is_one_time = body.is_one_time;
+    if ("available_until" in body) {
+      data.available_until = body.available_until ? new Date(body.available_until) : null;
+    }
+  }
 
   const updated = await prisma.plan.update({
     where: { id },
-    data: {
-      title: title ?? plan.title,
-      location: location !== undefined ? (location || null) : plan.location,
-      description: description !== undefined ? (description || null) : plan.description,
-      category: category ?? plan.category,
-      subcategory: subcategory !== undefined ? (subcategory || null) : plan.subcategory,
-    },
+    data,
     include: { created_by: { select: { username: true } } },
   });
 
