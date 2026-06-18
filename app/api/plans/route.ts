@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { title, location, description, category, subcategory } = body;
+  const { title, location, description, category, subcategory, available_until } = body;
 
   if (!title || !category) {
     return NextResponse.json({ error: "title and category are required" }, { status: 400 });
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       description: description ?? null,
       category,
       subcategory: subcategory ?? null,
+      available_until: available_until ? new Date(available_until) : null,
       created_by_id: session.user.id,
     },
   });

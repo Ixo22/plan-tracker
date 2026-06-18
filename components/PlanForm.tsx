@@ -23,6 +23,8 @@ export default function PlanForm() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
+  const [isPriority, setIsPriority] = useState(false);
+  const [availableUntil, setAvailableUntil] = useState("");
   const [status, setStatus] = useState<Status>("idle");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -38,6 +40,7 @@ export default function PlanForm() {
         description: description || null,
         category,
         subcategory: subcategory || null,
+        available_until: isPriority && availableUntil ? availableUntil : null,
       }),
     });
 
@@ -47,6 +50,8 @@ export default function PlanForm() {
       setDescription("");
       setCategory("");
       setSubcategory("");
+      setIsPriority(false);
+      setAvailableUntil("");
       setStatus("success");
       setTimeout(() => setStatus("idle"), 3000);
     } else {
@@ -137,6 +142,36 @@ export default function PlanForm() {
           </select>
         </div>
       )}
+
+      <div className="border border-slate-200 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-700">¿Plan urgente o con fecha límite?</p>
+            <p className="text-xs text-slate-400 mt-0.5">Se priorizará automáticamente en las sugerencias</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPriority}
+            onClick={() => { setIsPriority(!isPriority); if (isPriority) setAvailableUntil(""); }}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${isPriority ? "bg-indigo-600" : "bg-slate-200"}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${isPriority ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
+        </div>
+        {isPriority && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Disponible hasta</label>
+            <input
+              type="date"
+              value={availableUntil}
+              onChange={(e) => setAvailableUntil(e.target.value)}
+              autoFocus
+              className={inputCls}
+            />
+          </div>
+        )}
+      </div>
 
       <button
         type="submit"

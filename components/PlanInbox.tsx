@@ -60,6 +60,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
   const [userFilter, setUserFilter] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [togglingOneTime, setTogglingOneTime] = useState<string | null>(null);
+  const [showPriorityDate, setShowPriorityDate] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("title");
@@ -135,6 +136,19 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
     });
     setTogglingOneTime(null);
     startTransition(() => router.refresh());
+  }
+
+  function isPriorityOn(plan: Plan) {
+    return plan.available_until !== null || showPriorityDate.has(plan.id);
+  }
+
+  function handlePriorityToggle(plan: Plan) {
+    if (isPriorityOn(plan)) {
+      setShowPriorityDate((prev) => { const s = new Set(prev); s.delete(plan.id); return s; });
+      if (plan.available_until) saveAvailableUntil(plan.id, "");
+    } else {
+      setShowPriorityDate((prev) => new Set([...prev, plan.id]));
+    }
   }
 
   async function saveAvailableUntil(planId: string, value: string) {
@@ -363,7 +377,7 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 pt-0.5">
                   <button
                     onClick={() => toggleOneTime(plan.id, plan.is_one_time)}
                     disabled={togglingOneTime === plan.id}
@@ -372,17 +386,33 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                   >
                     1×
                   </button>
-                  <input
-                    key={plan.available_until ?? "null"}
-                    type="date"
-                    defaultValue={plan.available_until ? plan.available_until.slice(0, 10) : ""}
-                    onBlur={(e) => saveAvailableUntil(plan.id, e.target.value)}
-                    title="Disponible hasta"
-                    className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
-                  />
-                  {plan.available_until && new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) && (
-                    <span className="text-xs font-bold text-red-500">🔥 Urgente</span>
-                  )}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isPriorityOn(plan)}
+                        onClick={() => handlePriorityToggle(plan)}
+                        className={`relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${isPriorityOn(plan) ? "bg-indigo-500" : "bg-slate-200"}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ${isPriorityOn(plan) ? "translate-x-4" : "translate-x-0"}`} />
+                      </button>
+                      <span className="text-xs text-slate-500">Urgente</span>
+                      {plan.available_until && new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) && (
+                        <span className="text-xs font-bold text-red-500">🔥</span>
+                      )}
+                    </div>
+                    {isPriorityOn(plan) && (
+                      <input
+                        key={plan.available_until ?? "new"}
+                        type="date"
+                        defaultValue={plan.available_until ? plan.available_until.slice(0, 10) : ""}
+                        onBlur={(e) => saveAvailableUntil(plan.id, e.target.value)}
+                        autoFocus={!plan.available_until}
+                        className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -449,17 +479,31 @@ export default function PlanInbox({ plans: initialPlans }: { plans: Plan[] }) {
                         >
                           1×
                         </button>
-                        <div className="flex flex-col gap-0.5">
-                          <input
-                            key={plan.available_until ?? "null"}
-                            type="date"
-                            defaultValue={plan.available_until ? plan.available_until.slice(0, 10) : ""}
-                            onBlur={(e) => saveAvailableUntil(plan.id, e.target.value)}
-                            title="Disponible hasta"
-                            className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
-                          />
-                          {plan.available_until && new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) && (
-                            <span className="text-xs font-bold text-red-500">🔥 Urgente</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={isPriorityOn(plan)}
+                              onClick={() => handlePriorityToggle(plan)}
+                              className={`relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${isPriorityOn(plan) ? "bg-indigo-500" : "bg-slate-200"}`}
+                            >
+                              <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition duration-200 ${isPriorityOn(plan) ? "translate-x-4" : "translate-x-0"}`} />
+                            </button>
+                            <span className="text-xs text-slate-500">Urgente</span>
+                            {plan.available_until && new Date(plan.available_until) <= new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) && (
+                              <span className="text-xs font-bold text-red-500">🔥</span>
+                            )}
+                          </div>
+                          {isPriorityOn(plan) && (
+                            <input
+                              key={plan.available_until ?? "new"}
+                              type="date"
+                              defaultValue={plan.available_until ? plan.available_until.slice(0, 10) : ""}
+                              onBlur={(e) => saveAvailableUntil(plan.id, e.target.value)}
+                              autoFocus={!plan.available_until}
+                              className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+                            />
                           )}
                         </div>
                       </div>
